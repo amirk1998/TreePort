@@ -1,0 +1,22 @@
+# Build artifacts
+/target/
+
+# Cargo lockfile note: this is a binary (not a library) crate, so
+# Cargo.lock SHOULD be committed once it exists — don't ignore it.
+# (Left uncommented on purpose; nothing to ignore here.)
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local scratch output from testing the CLI itself
+/report.txt
+/report.md
+/report.json
+/report.csv

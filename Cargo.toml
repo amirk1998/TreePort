@@ -1,0 +1,18 @@
+[package]
+name = "treeport"
+version = "0.1.0"
+edition = "2021"
+description = "A fast, zero-dependency directory & file intelligence tool for the command line — with full Unicode / right-to-left script support (Persian, Arabic, Hebrew, …) built in."
+license = "MIT"
+repository = "https://github.com/amirk1998/treeport"
+readme = "README.md"
+
+[[bin]]
+name = "treeport"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,61 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+Nothing yet.
+
+## [0.1.0] - 2026-08-07
+
+Initial public release, renamed from `dirscan` to **Treeport**.
+
+### Added
+
+- Tree view of a directory with per-folder totals, item counts, and per-type icons.
+- Summary report: totals, breakdown by category and extension, largest files,
+  largest directories, oldest/newest files, empty files/dirs, hidden entries,
+  symlinks, and max scan depth.
+- Full Unicode / right-to-left script support (Persian, Arabic, Hebrew, etc.):
+  - Correct UTF-8 handling throughout scanning, sorting, filtering, and export.
+  - Automatic UTF-8 console code page switch on Windows (`cmd.exe`/PowerShell),
+    fixing Persian/Arabic text rendering as `?`/mojibake.
+  - Unicode directional isolates around right-to-left names in the tree,
+    tables, and Markdown output, preventing bidi corruption of the
+    surrounding ASCII structure.
+  - `--utf8-bom` flag for `.txt`/`.md` exports, so older Windows apps
+    (Notepad, Excel's plain "open") correctly detect UTF-8 instead of
+    guessing the system code page.
+- Export formats:
+  - `-m, --markdown <file>` — formatted Markdown report.
+  - `-j, --json <file>` — structured JSON report for scripts/dashboards/CI
+    (never BOM-prefixed, per the JSON spec).
+  - `-c, --csv <file>` — flat CSV of every entry (always BOM-prefixed, for
+    correct Excel rendering of non-Latin text).
+  - `-o, --output <file>` — full detailed per-entry table.
+- Duplicate file detection (`--find-duplicates`) by content, grouped and
+  sized by wasted disk space.
+- Filtering options:
+  - `-e, --exclude <name>` — exact-name exclude (repeatable).
+  - `--exclude-glob <pattern>` — `*`/`?` wildcard exclude (repeatable).
+  - `--include-ext` / `--exclude-ext <ext>` — extension filters (repeatable).
+  - `--newer-than` / `--older-than <YYYY-MM-DD>` — modification-date filters.
+  - `--min-size <SIZE>` — hide small files from the tree view.
+  - `-d, --max-depth <N>` — limit recursion depth.
+  - `.treeportignore` — a simple, `.gitignore`-style ignore file auto-loaded
+    from the scan root (`--ignore-file` / `--no-ignore-file` to override).
+- Live, throttled scan-progress indicator on stderr for large trees
+  (`--no-progress` to disable), never touching the actual report output.
+- `-t, --top <N>` largest-files/largest-directories count, `-s, --sort
+<name|size>` tree sort order, `--ascii` plain-ASCII tree characters,
+  `--no-color`/`--color`, `-q, --quiet`, `-f, --full`.
+- Cross-platform: Linux, macOS, and Windows, with symlinks detected and
+  never followed (safe against cyclic symlinks) and per-entry permission
+  errors reported inline instead of aborting the scan.
+- Zero external dependencies — pure Rust standard library.
+
+[Unreleased]: https://github.com/amirk1998/treeport/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/amirk1998/treeport/releases/tag/v0.1.0
