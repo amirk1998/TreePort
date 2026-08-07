@@ -53,7 +53,7 @@ Unpack it and put the `treeport` (or `treeport.exe`) binary somewhere on your `P
 ### Install with Cargo
 
 ```bash
-cargo install --git https://github.com/<your-username>/treeport
+cargo install --git https://github.com/amirk1998/treeport
 ```
 
 ### Build from source

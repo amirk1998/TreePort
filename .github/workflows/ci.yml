@@ -1,8 +1,5 @@
 name: CI
 
-# Runs on every push and pull request against main.
-# Goal: catch a break on any platform *before* it ships, using the
-# same three OS families the release workflow builds for.
 on:
   push:
     branches: [main]
@@ -20,8 +17,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      # پین‌شده به همون نسخه‌ای که در rust-toolchain.toml هست — اگر
+      # یک‌روز خواستی نسخه رو ارتقا بدی، هر دو جا رو با هم عوض کن.
+      - name: Install Rust (1.90.0)
+        uses: dtolnay/rust-toolchain@1.90.0
         with:
           components: rustfmt, clippy
 
@@ -42,8 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust (1.90.0)
+        uses: dtolnay/rust-toolchain@1.90.0
 
       - name: Cache cargo registry & build
         uses: Swatinem/rust-cache@v2
@@ -67,3 +66,14 @@ jobs:
             ./target/release/treeport --help
             ./target/release/treeport . -q
           fi
+
+  clippy-latest-stable-watch:
+    name: clippy on latest stable (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --all-targets --all-features -- -D warnings

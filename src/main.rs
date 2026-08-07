@@ -105,7 +105,6 @@
 //!   # correctly everywhere (GitHub, VS Code, and Windows Notepad alike):
 //!   ./treeport "پروژه من" -m "گزارش.md" --utf8-bom
 
-
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
@@ -269,12 +268,17 @@ impl Config {
                 "-t" | "--top" => {
                     i += 1;
                     let v = args.get(i).ok_or("--top requires a number")?;
-                    top_n = v.parse::<usize>().map_err(|_| format!("invalid --top value: {v}"))?;
+                    top_n = v
+                        .parse::<usize>()
+                        .map_err(|_| format!("invalid --top value: {v}"))?;
                 }
                 "-d" | "--max-depth" => {
                     i += 1;
                     let v = args.get(i).ok_or("--max-depth requires a number")?;
-                    max_depth = Some(v.parse::<usize>().map_err(|_| format!("invalid --max-depth value: {v}"))?);
+                    max_depth = Some(
+                        v.parse::<usize>()
+                            .map_err(|_| format!("invalid --max-depth value: {v}"))?,
+                    );
                 }
                 "-e" | "--exclude" => {
                     i += 1;
@@ -287,7 +291,11 @@ impl Config {
                     sort = match v.as_str() {
                         "name" => SortOrder::Name,
                         "size" => SortOrder::Size,
-                        other => return Err(format!("invalid --sort value: {other} (use 'name' or 'size')")),
+                        other => {
+                            return Err(format!(
+                                "invalid --sort value: {other} (use 'name' or 'size')"
+                            ))
+                        }
                     };
                 }
                 "--ascii" => ascii = true,
@@ -308,27 +316,37 @@ impl Config {
                 }
                 "--exclude-glob" => {
                     i += 1;
-                    let v = args.get(i).ok_or("--exclude-glob requires a pattern, e.g. '*.log'")?;
+                    let v = args
+                        .get(i)
+                        .ok_or("--exclude-glob requires a pattern, e.g. '*.log'")?;
                     exclude_glob.push(v.clone());
                 }
                 "--include-ext" => {
                     i += 1;
-                    let v = args.get(i).ok_or("--include-ext requires an extension, e.g. rs")?;
+                    let v = args
+                        .get(i)
+                        .ok_or("--include-ext requires an extension, e.g. rs")?;
                     include_ext.push(v.trim_start_matches('.').to_lowercase());
                 }
                 "--exclude-ext" => {
                     i += 1;
-                    let v = args.get(i).ok_or("--exclude-ext requires an extension, e.g. log")?;
+                    let v = args
+                        .get(i)
+                        .ok_or("--exclude-ext requires an extension, e.g. log")?;
                     exclude_ext.push(v.trim_start_matches('.').to_lowercase());
                 }
                 "--newer-than" => {
                     i += 1;
-                    let v = args.get(i).ok_or("--newer-than requires a date, e.g. 2025-01-01")?;
+                    let v = args
+                        .get(i)
+                        .ok_or("--newer-than requires a date, e.g. 2025-01-01")?;
                     newer_than = Some(parse_date(v)?);
                 }
                 "--older-than" => {
                     i += 1;
-                    let v = args.get(i).ok_or("--older-than requires a date, e.g. 2025-01-01")?;
+                    let v = args
+                        .get(i)
+                        .ok_or("--older-than requires a date, e.g. 2025-01-01")?;
                     older_than = Some(parse_date(v)?);
                 }
                 "--ignore-file" => {
@@ -361,7 +379,9 @@ impl Config {
         // not full path globbing). Auto-loaded from the scan root unless
         // disabled or overridden with an explicit path.
         if !no_ignore_file {
-            let path = ignore_file.clone().unwrap_or_else(|| root.join(".treeportignore"));
+            let path = ignore_file
+                .clone()
+                .unwrap_or_else(|| root.join(".treeportignore"));
             if let Ok(contents) = fs::read_to_string(&path) {
                 for line in contents.lines() {
                     let line = line.trim();
@@ -394,9 +414,28 @@ impl Config {
         let show_progress = show_progress && io::stderr().is_terminal();
 
         Ok(Config {
-            root, output, markdown, json, csv, top_n, max_depth, excludes, exclude_glob,
-            include_ext, exclude_ext, newer_than, older_than, sort, ascii, color, utf8_bom,
-            show_full_table, quiet, find_duplicates, min_size, show_progress,
+            root,
+            output,
+            markdown,
+            json,
+            csv,
+            top_n,
+            max_depth,
+            excludes,
+            exclude_glob,
+            include_ext,
+            exclude_ext,
+            newer_than,
+            older_than,
+            sort,
+            ascii,
+            color,
+            utf8_bom,
+            show_full_table,
+            quiet,
+            find_duplicates,
+            min_size,
+            show_progress,
         })
     }
 }
@@ -417,7 +456,10 @@ fn parse_size(s: &str) -> Result<u64, String> {
     } else {
         (upper.as_str(), 1.0)
     };
-    let num: f64 = num_part.trim().parse().map_err(|_| format!("invalid size: {s} (try e.g. 10MB, 500KB, 2048)"))?;
+    let num: f64 = num_part
+        .trim()
+        .parse()
+        .map_err(|_| format!("invalid size: {s} (try e.g. 10MB, 500KB, 2048)"))?;
     if num < 0.0 {
         return Err(format!("size cannot be negative: {s}"));
     }
@@ -552,10 +594,10 @@ struct Entry {
 struct TreeNode {
     name: String,
     kind: Kind,
-    own_size: u64,        // for files: their size. For dirs: 0 (see total_size).
-    total_size: u64,      // for dirs: recursive size of all files inside. For files: same as own_size.
-    item_count: usize,    // for dirs: total number of descendant entries. For files: 0.
-    truncated: bool,      // true if this dir had children we didn't recurse into (max-depth reached)
+    own_size: u64,             // for files: their size. For dirs: 0 (see total_size).
+    total_size: u64, // for dirs: recursive size of all files inside. For files: same as own_size.
+    item_count: usize, // for dirs: total number of descendant entries. For files: 0.
+    truncated: bool, // true if this dir had children we didn't recurse into (max-depth reached)
     hidden_by_min_size: usize, // direct child files hidden from display by --min-size
     children: Vec<TreeNode>,
 }
@@ -612,7 +654,11 @@ struct Progress {
 
 impl Progress {
     fn new(enabled: bool) -> Self {
-        Progress { enabled, count: 0, last_print: Instant::now() }
+        Progress {
+            enabled,
+            count: 0,
+            last_print: Instant::now(),
+        }
     }
 
     fn tick(&mut self) {
@@ -678,9 +724,15 @@ fn parse_date(s: &str) -> Result<SystemTime, String> {
     if parts.len() != 3 {
         return Err(format!("invalid date: {s} (expected YYYY-MM-DD)"));
     }
-    let y: i64 = parts[0].parse().map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
-    let m: u32 = parts[1].parse().map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
-    let d: u32 = parts[2].parse().map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
+    let y: i64 = parts[0]
+        .parse()
+        .map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
+    let m: u32 = parts[1]
+        .parse()
+        .map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
+    let d: u32 = parts[2]
+        .parse()
+        .map_err(|_| format!("invalid date: {s} (expected YYYY-MM-DD)"))?;
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return Err(format!("invalid date: {s} (expected YYYY-MM-DD)"));
     }
@@ -733,7 +785,7 @@ fn is_hidden(name: &str, _meta: &Metadata) -> bool {
 /// Recursively walk `dir`, building both:
 ///   - a `TreeNode` (for the pretty tree view), and
 ///   - a flat `Vec<Entry>` + `Stats` (for the table report / summary)
-/// in a single filesystem pass.
+///     in a single filesystem pass.
 ///
 /// Symlinks are recorded but never followed — `fs::symlink_metadata`
 /// (rather than `fs::metadata`) is what makes this safe against cyclic
@@ -750,8 +802,19 @@ fn walk(
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(e) => {
-            stats.errors.push(format!("cannot read {}: {}", dir.display(), e));
-            return TreeNode { name, kind: Kind::Dir, own_size: 0, total_size: 0, item_count: 0, truncated: false, hidden_by_min_size: 0, children: Vec::new() };
+            stats
+                .errors
+                .push(format!("cannot read {}: {}", dir.display(), e));
+            return TreeNode {
+                name,
+                kind: Kind::Dir,
+                own_size: 0,
+                total_size: 0,
+                item_count: 0,
+                truncated: false,
+                hidden_by_min_size: 0,
+                children: Vec::new(),
+            };
         }
     };
 
@@ -771,7 +834,11 @@ fn walk(
             stats.excluded_count += 1;
             continue;
         }
-        if cfg.exclude_glob.iter().any(|pat| glob_match(pat, &child_name)) {
+        if cfg
+            .exclude_glob
+            .iter()
+            .any(|pat| glob_match(pat, &child_name))
+        {
             stats.excluded_count += 1;
             continue;
         }
@@ -781,7 +848,9 @@ fn walk(
         let meta = match fs::symlink_metadata(&path) {
             Ok(m) => m,
             Err(e) => {
-                stats.errors.push(format!("cannot stat {}: {}", path.display(), e));
+                stats
+                    .errors
+                    .push(format!("cannot stat {}: {}", path.display(), e));
                 continue;
             }
         };
@@ -805,14 +874,15 @@ fn walk(
                 stats.excluded_count += 1;
                 continue;
             }
+
             if let Some(newer) = cfg.newer_than {
-                if modified.map_or(true, |m| m < newer) {
+                if modified.is_none_or(|m| m < newer) {
                     stats.excluded_count += 1;
                     continue;
                 }
             }
             if let Some(older) = cfg.older_than {
-                if modified.map_or(true, |m| m > older) {
+                if modified.is_none_or(|m| m > older) {
                     stats.excluded_count += 1;
                     continue;
                 }
@@ -850,15 +920,33 @@ fn walk(
         }
 
         let node = if kind == Kind::Dir {
-            let can_descend = cfg.max_depth.map_or(true, |m| depth < m);
+            let can_descend = cfg.max_depth.is_none_or(|m| depth < m);
             if can_descend {
                 walk(&path, child_name, depth + 1, cfg, entries, stats, progress)
             } else {
                 truncated = true;
-                TreeNode { name: child_name, kind: Kind::Dir, own_size: 0, total_size: 0, item_count: 0, truncated: true, hidden_by_min_size: 0, children: Vec::new() }
+                TreeNode {
+                    name: child_name,
+                    kind: Kind::Dir,
+                    own_size: 0,
+                    total_size: 0,
+                    item_count: 0,
+                    truncated: true,
+                    hidden_by_min_size: 0,
+                    children: Vec::new(),
+                }
             }
         } else {
-            TreeNode { name: child_name, kind, own_size: size, total_size: size, item_count: 0, truncated: false, hidden_by_min_size: 0, children: Vec::new() }
+            TreeNode {
+                name: child_name,
+                kind,
+                own_size: size,
+                total_size: size,
+                item_count: 0,
+                truncated: false,
+                hidden_by_min_size: 0,
+                children: Vec::new(),
+            }
         };
 
         tree_children.push(node);
@@ -869,8 +957,13 @@ fn walk(
     // Totals reflect the TRUE contents of the directory (including files
     // hidden from display by --min-size) — only the tree's visual list of
     // children is filtered, never the numbers.
-    let total_size: u64 = tree_children.iter().map(|c| c.total_size).sum::<u64>() + hidden_min_size_total;
-    let item_count: usize = tree_children.iter().map(|c| 1 + c.item_count).sum::<usize>() + hidden_by_min_size;
+    let total_size: u64 =
+        tree_children.iter().map(|c| c.total_size).sum::<u64>() + hidden_min_size_total;
+    let item_count: usize = tree_children
+        .iter()
+        .map(|c| 1 + c.item_count)
+        .sum::<usize>()
+        + hidden_by_min_size;
 
     TreeNode {
         name,
@@ -891,9 +984,11 @@ fn sort_tree_children(children: &mut [TreeNode], order: SortOrder) {
             // the classic, easy-to-scan `tree` convention.
             let a_is_dir = a.kind == Kind::Dir;
             let b_is_dir = b.kind == Kind::Dir;
-            b_is_dir.cmp(&a_is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+            b_is_dir
+                .cmp(&a_is_dir)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
         }),
-        SortOrder::Size => children.sort_by(|a, b| b.total_size.cmp(&a.total_size)),
+        SortOrder::Size => children.sort_by_key(|c| std::cmp::Reverse(c.total_size)),
     }
 }
 
@@ -909,7 +1004,14 @@ fn classify(meta: &Metadata) -> Kind {
     }
 }
 
-fn record_stats(kind: &Kind, size: u64, hidden: bool, depth: usize, path: &Path, stats: &mut Stats) {
+fn record_stats(
+    kind: &Kind,
+    size: u64,
+    hidden: bool,
+    depth: usize,
+    path: &Path,
+    stats: &mut Stats,
+) {
     if hidden {
         stats.hidden_count += 1;
     }
@@ -929,7 +1031,7 @@ fn record_stats(kind: &Kind, size: u64, hidden: bool, depth: usize, path: &Path,
         }
         Kind::Dir => {
             stats.dir_count += 1;
-            if fs::read_dir(path).map(|mut rd| rd.next().is_none()).unwrap_or(false) {
+            if fs::read_dir(path).is_ok_and(|mut rd| rd.next().is_none()) {
                 stats.empty_dir_count += 1;
             }
         }
@@ -1006,8 +1108,9 @@ fn compute_categories(entries: &[Entry]) -> Vec<(&'static str, u64, u64)> {
         entry.0 += 1;
         entry.1 += e.size;
     }
-    let mut v: Vec<(&'static str, u64, u64)> = map.into_iter().map(|(k, (c, s))| (k, c, s)).collect();
-    v.sort_by(|a, b| b.2.cmp(&a.2));
+    let mut v: Vec<(&'static str, u64, u64)> =
+        map.into_iter().map(|(k, (c, s))| (k, c, s)).collect();
+    v.sort_by_key(|c| std::cmp::Reverse(c.2));
     v
 }
 
@@ -1184,7 +1287,11 @@ fn format_unix_timestamp(d: Duration) -> String {
     let secs = d.as_secs() as i64;
     let days = secs.div_euclid(86_400);
     let secs_of_day = secs.rem_euclid(86_400);
-    let (h, m, s) = (secs_of_day / 3600, (secs_of_day % 3600) / 60, secs_of_day % 60);
+    let (h, m, s) = (
+        secs_of_day / 3600,
+        (secs_of_day % 3600) / 60,
+        secs_of_day % 60,
+    );
     let (y, mo, da) = civil_from_days(days);
     format!("{y:04}-{mo:02}-{da:02} {h:02}:{m:02}:{s:02}")
 }
@@ -1205,13 +1312,23 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 
 #[cfg(unix)]
 fn format_mode(mode: Option<u32>) -> String {
-    let Some(mode) = mode else { return "?????????".to_string() };
+    let Some(mode) = mode else {
+        return "?????????".to_string();
+    };
     let bits = [
-        (0o400, 'r'), (0o200, 'w'), (0o100, 'x'),
-        (0o040, 'r'), (0o020, 'w'), (0o010, 'x'),
-        (0o004, 'r'), (0o002, 'w'), (0o001, 'x'),
+        (0o400, 'r'),
+        (0o200, 'w'),
+        (0o100, 'x'),
+        (0o040, 'r'),
+        (0o020, 'w'),
+        (0o010, 'x'),
+        (0o004, 'r'),
+        (0o002, 'w'),
+        (0o001, 'x'),
     ];
-    bits.iter().map(|(mask, ch)| if mode & mask != 0 { *ch } else { '-' }).collect()
+    bits.iter()
+        .map(|(mask, ch)| if mode & mask != 0 { *ch } else { '-' })
+        .collect()
 }
 
 // =======================================================================
@@ -1222,10 +1339,10 @@ fn format_mode(mode: Option<u32>) -> String {
 /// modern tools like `eza`/`tree`), with a plain-ASCII fallback for
 /// terminals/fonts that mangle Unicode (some legacy Windows setups).
 struct TreeChars {
-    branch: &'static str,  // "├── " / "|-- "
-    last: &'static str,    // "└── " / "`-- "
-    pipe: &'static str,    // "│   " / "|   "
-    blank: &'static str,   // "    "
+    branch: &'static str, // "├── " / "|-- "
+    last: &'static str,   // "└── " / "`-- "
+    pipe: &'static str,   // "│   " / "|   "
+    blank: &'static str,  // "    "
     dir_icon: &'static str,
     file_icon: &'static str,
     link_icon: &'static str,
@@ -1252,7 +1369,11 @@ const ASCII_CHARS: TreeChars = TreeChars {
 };
 
 fn render_tree(node: &TreeNode, cfg: &Config) -> String {
-    let chars = if cfg.ascii { &ASCII_CHARS } else { &UNICODE_CHARS };
+    let chars = if cfg.ascii {
+        &ASCII_CHARS
+    } else {
+        &UNICODE_CHARS
+    };
     let mut out = String::new();
 
     // Root line: full path, bold, with its grand totals.
@@ -1274,7 +1395,14 @@ fn render_tree(node: &TreeNode, cfg: &Config) -> String {
     out
 }
 
-fn render_node(node: &TreeNode, prefix: &str, is_last: bool, chars: &TreeChars, cfg: &Config, out: &mut String) {
+fn render_node(
+    node: &TreeNode,
+    prefix: &str,
+    is_last: bool,
+    chars: &TreeChars,
+    cfg: &Config,
+    out: &mut String,
+) {
     let connector = if is_last { chars.last } else { chars.branch };
 
     let line = match node.kind {
@@ -1282,14 +1410,26 @@ fn render_node(node: &TreeNode, prefix: &str, is_last: bool, chars: &TreeChars, 
             let name = paint(&bidi_safe(&node.name), &[BOLD, BLUE], cfg.color);
             let mut label = format!("{}{}", chars.dir_icon, name);
             if node.item_count > 0 {
-                let meta = paint(&format!("({} items, {})", node.item_count, human_size(node.total_size)), &[DIM, GRAY], cfg.color);
+                let meta = paint(
+                    &format!(
+                        "({} items, {})",
+                        node.item_count,
+                        human_size(node.total_size)
+                    ),
+                    &[DIM, GRAY],
+                    cfg.color,
+                );
                 label.push_str(&format!("  {meta}"));
             }
             if node.truncated {
                 label.push_str(&paint("  [depth limit reached]", &[DIM, YELLOW], cfg.color));
             }
             if node.hidden_by_min_size > 0 {
-                let note = paint(&format!("  [+{} smaller files hidden]", node.hidden_by_min_size), &[DIM, GRAY], cfg.color);
+                let note = paint(
+                    &format!("  [+{} smaller files hidden]", node.hidden_by_min_size),
+                    &[DIM, GRAY],
+                    cfg.color,
+                );
                 label.push_str(&note);
             }
             label
@@ -1298,10 +1438,18 @@ fn render_node(node: &TreeNode, prefix: &str, is_last: bool, chars: &TreeChars, 
             let icon = if cfg.ascii {
                 chars.file_icon
             } else {
-                let ext = node.name.rsplit_once('.').map(|(_, e)| e.to_lowercase()).unwrap_or_else(|| "(no extension)".to_string());
+                let ext = node
+                    .name
+                    .rsplit_once('.')
+                    .map(|(_, e)| e.to_lowercase())
+                    .unwrap_or_else(|| "(no extension)".to_string());
                 file_icon_for(&ext)
             };
-            let size = paint(&format!("({})", human_size(node.own_size)), &[DIM, GRAY], cfg.color);
+            let size = paint(
+                &format!("({})", human_size(node.own_size)),
+                &[DIM, GRAY],
+                cfg.color,
+            );
             format!("{icon}{}  {size}", bidi_safe(&node.name))
         }
         Kind::Symlink => {
@@ -1331,24 +1479,47 @@ fn render_node(node: &TreeNode, prefix: &str, is_last: bool, chars: &TreeChars, 
 fn render_detailed_report(root: &Path, entries: &[Entry]) -> String {
     let mut out = String::new();
     out.push_str(&format!("COMPLETE REPORT — {}\n", root.display()));
-    out.push_str(&format!("Generated: {}\n", format_time(Some(SystemTime::now()))));
+    out.push_str(&format!(
+        "Generated: {}\n",
+        format_time(Some(SystemTime::now()))
+    ));
     out.push_str(&"=".repeat(100));
     out.push('\n');
-    out.push_str(&format!("{:<5} {:>12} {:<20} {:<9} {}\n", "TYPE", "SIZE", "MODIFIED", "PERMS", "PATH"));
+    out.push_str(&format!(
+        "{:<5} {:>12} {:<20} {:<9} {}\n",
+        "TYPE", "SIZE", "MODIFIED", "PERMS", "PATH"
+    ));
     out.push_str(&"-".repeat(100));
     out.push('\n');
 
     for e in entries {
         let indent = "  ".repeat(e.depth);
-        let name = e.path.strip_prefix(root).unwrap_or(&e.path).display().to_string();
-        let size_str = if e.kind == Kind::File { human_size(e.size) } else { String::from("-") };
+        let name = e
+            .path
+            .strip_prefix(root)
+            .unwrap_or(&e.path)
+            .display()
+            .to_string();
+        let size_str = if e.kind == Kind::File {
+            human_size(e.size)
+        } else {
+            String::from("-")
+        };
 
         #[cfg(unix)]
         let perms = format_mode(e.mode);
         #[cfg(not(unix))]
         let perms = "n/a".to_string();
 
-        out.push_str(&format!("{:<5} {:>12} {:<20} {:<9} {}{}\n", e.kind, size_str, format_time(e.modified), perms, indent, bidi_safe(&name)));
+        out.push_str(&format!(
+            "{:<5} {:>12} {:<20} {:<9} {}{}\n",
+            e.kind,
+            size_str,
+            format_time(e.modified),
+            perms,
+            indent,
+            bidi_safe(&name)
+        ));
     }
     out
 }
@@ -1367,25 +1538,48 @@ fn render_summary_report(
     out.push_str(&"=".repeat(70));
     out.push('\n');
 
-    let total_entries = stats.file_count + stats.dir_count + stats.symlink_count + stats.other_count;
+    let total_entries =
+        stats.file_count + stats.dir_count + stats.symlink_count + stats.other_count;
     out.push_str(&format!("Total entries scanned : {total_entries}\n"));
     out.push_str(&format!("  Files               : {}\n", stats.file_count));
     out.push_str(&format!("  Directories         : {}\n", stats.dir_count));
-    out.push_str(&format!("  Symlinks            : {}\n", stats.symlink_count));
+    out.push_str(&format!(
+        "  Symlinks            : {}\n",
+        stats.symlink_count
+    ));
     if stats.other_count > 0 {
         out.push_str(&format!("  Other (sockets/etc) : {}\n", stats.other_count));
     }
-    out.push_str(&format!("Total size of files   : {} ({} bytes)\n", human_size(stats.total_size), stats.total_size));
+    out.push_str(&format!(
+        "Total size of files   : {} ({} bytes)\n",
+        human_size(stats.total_size),
+        stats.total_size
+    ));
     out.push_str(&format!("Hidden entries        : {}\n", stats.hidden_count));
-    out.push_str(&format!("Empty files           : {}\n", stats.empty_file_count));
-    out.push_str(&format!("Empty directories     : {}\n", stats.empty_dir_count));
+    out.push_str(&format!(
+        "Empty files           : {}\n",
+        stats.empty_file_count
+    ));
+    out.push_str(&format!(
+        "Empty directories     : {}\n",
+        stats.empty_dir_count
+    ));
     if stats.excluded_count > 0 {
-        out.push_str(&format!("Excluded entries      : {}\n", stats.excluded_count));
+        out.push_str(&format!(
+            "Excluded entries      : {}\n",
+            stats.excluded_count
+        ));
     }
-    out.push_str(&format!("Max tree depth        : {}\n", stats.max_depth_seen));
+    out.push_str(&format!(
+        "Max tree depth        : {}\n",
+        stats.max_depth_seen
+    ));
     if stats.file_count > 0 {
         let avg = stats.total_size as f64 / stats.file_count as f64;
-        out.push_str(&format!("Average file size     : {}\n", human_size(avg.round() as u64)));
+        out.push_str(&format!(
+            "Average file size     : {}\n",
+            human_size(avg.round() as u64)
+        ));
     }
     out.push_str(&format!("Scan duration         : {:.1?}\n", elapsed));
 
@@ -1393,20 +1587,36 @@ fn render_summary_report(
     out.push_str("Breakdown by category\n");
     out.push_str(&"-".repeat(70));
     out.push('\n');
-    out.push_str(&format!("{:<14} {:>10} {:>15}\n", "CATEGORY", "COUNT", "TOTAL SIZE"));
+    out.push_str(&format!(
+        "{:<14} {:>10} {:>15}\n",
+        "CATEGORY", "COUNT", "TOTAL SIZE"
+    ));
     for (cat, count, size) in compute_categories(entries) {
-        out.push_str(&format!("{:<14} {:>10} {:>15}\n", cat, count, human_size(size)));
+        out.push_str(&format!(
+            "{:<14} {:>10} {:>15}\n",
+            cat,
+            count,
+            human_size(size)
+        ));
     }
 
     out.push('\n');
     out.push_str("Breakdown by extension (top 15 by total size)\n");
     out.push_str(&"-".repeat(70));
     out.push('\n');
-    out.push_str(&format!("{:<18} {:>10} {:>15}\n", "EXTENSION", "COUNT", "TOTAL SIZE"));
+    out.push_str(&format!(
+        "{:<18} {:>10} {:>15}\n",
+        "EXTENSION", "COUNT", "TOTAL SIZE"
+    ));
     let mut ext_vec: Vec<(&String, &(u64, u64))> = stats.by_extension.iter().collect();
-    ext_vec.sort_by(|a, b| b.1 .1.cmp(&a.1 .1));
+    ext_vec.sort_by_key(|e| std::cmp::Reverse(e.1 .1));
     for (ext, (count, size)) in ext_vec.iter().take(15) {
-        out.push_str(&format!("{:<18} {:>10} {:>15}\n", ext, count, human_size(*size)));
+        out.push_str(&format!(
+            "{:<18} {:>10} {:>15}\n",
+            ext,
+            count,
+            human_size(*size)
+        ));
     }
 
     out.push('\n');
@@ -1414,10 +1624,19 @@ fn render_summary_report(
     out.push_str(&"-".repeat(70));
     out.push('\n');
     let mut files: Vec<&Entry> = entries.iter().filter(|e| e.kind == Kind::File).collect();
-    files.sort_by(|a, b| b.size.cmp(&a.size));
+    files.sort_by_key(|f| std::cmp::Reverse(f.size));
     for f in files.iter().take(top_n) {
-        let rel = f.path.strip_prefix(root).unwrap_or(&f.path).display().to_string();
-        out.push_str(&format!("{:>12}  {}\n", human_size(f.size), bidi_safe(&rel)));
+        let rel = f
+            .path
+            .strip_prefix(root)
+            .unwrap_or(&f.path)
+            .display()
+            .to_string();
+        out.push_str(&format!(
+            "{:>12}  {}\n",
+            human_size(f.size),
+            bidi_safe(&rel)
+        ));
     }
 
     if !dirs.is_empty() {
@@ -1426,21 +1645,50 @@ fn render_summary_report(
         out.push_str(&"-".repeat(70));
         out.push('\n');
         for (path, size, count) in dirs {
-            let rel = path.strip_prefix(root).unwrap_or(path).display().to_string();
-            out.push_str(&format!("{:>12}  {}  ({count} items)\n", human_size(*size), bidi_safe(&rel)));
+            let rel = path
+                .strip_prefix(root)
+                .unwrap_or(path)
+                .display()
+                .to_string();
+            out.push_str(&format!(
+                "{:>12}  {}  ({count} items)\n",
+                human_size(*size),
+                bidi_safe(&rel)
+            ));
         }
     }
 
-    let mut by_time: Vec<&Entry> = entries.iter().filter(|e| e.kind == Kind::File && e.modified.is_some()).collect();
+    let mut by_time: Vec<&Entry> = entries
+        .iter()
+        .filter(|e| e.kind == Kind::File && e.modified.is_some())
+        .collect();
     by_time.sort_by_key(|e| e.modified);
     if let Some(oldest) = by_time.first() {
-        let rel = oldest.path.strip_prefix(root).unwrap_or(&oldest.path).display().to_string();
+        let rel = oldest
+            .path
+            .strip_prefix(root)
+            .unwrap_or(&oldest.path)
+            .display()
+            .to_string();
         out.push('\n');
-        out.push_str(&format!("Oldest file: {} ({})\n", bidi_safe(&rel), format_time(oldest.modified)));
+        out.push_str(&format!(
+            "Oldest file: {} ({})\n",
+            bidi_safe(&rel),
+            format_time(oldest.modified)
+        ));
     }
     if let Some(newest) = by_time.last() {
-        let rel = newest.path.strip_prefix(root).unwrap_or(&newest.path).display().to_string();
-        out.push_str(&format!("Newest file: {} ({})\n", bidi_safe(&rel), format_time(newest.modified)));
+        let rel = newest
+            .path
+            .strip_prefix(root)
+            .unwrap_or(&newest.path)
+            .display()
+            .to_string();
+        out.push_str(&format!(
+            "Newest file: {} ({})\n",
+            bidi_safe(&rel),
+            format_time(newest.modified)
+        ));
     }
 
     if let Some((groups, skipped)) = duplicates {
@@ -1451,8 +1699,15 @@ fn render_summary_report(
         if groups.is_empty() {
             out.push_str("No duplicate files found.\n");
         } else {
-            let total_wasted: u64 = groups.iter().map(|g| g[0].size * (g.len() as u64 - 1)).sum();
-            out.push_str(&format!("{} duplicate group(s) found — approx. {} wasted\n", groups.len(), human_size(total_wasted)));
+            let total_wasted: u64 = groups
+                .iter()
+                .map(|g| g[0].size * (g.len() as u64 - 1))
+                .sum();
+            out.push_str(&format!(
+                "{} duplicate group(s) found — approx. {} wasted\n",
+                groups.len(),
+                human_size(total_wasted)
+            ));
             for (i, group) in groups.iter().take(10).enumerate() {
                 out.push_str(&format!(
                     "  Group {}: {} x{} copies\n",
@@ -1461,22 +1716,36 @@ fn render_summary_report(
                     group.len()
                 ));
                 for e in group {
-                    let rel = e.path.strip_prefix(root).unwrap_or(&e.path).display().to_string();
+                    let rel = e
+                        .path
+                        .strip_prefix(root)
+                        .unwrap_or(&e.path)
+                        .display()
+                        .to_string();
                     out.push_str(&format!("    - {}\n", bidi_safe(&rel)));
                 }
             }
             if groups.len() > 10 {
-                out.push_str(&format!("  ... and {} more group(s) (see markdown/full report)\n", groups.len() - 10));
+                out.push_str(&format!(
+                    "  ... and {} more group(s) (see markdown/full report)\n",
+                    groups.len() - 10
+                ));
             }
         }
         if *skipped > 0 {
-            out.push_str(&format!("({skipped} file(s) skipped — larger than {})\n", human_size(DUP_HASH_SIZE_CAP)));
+            out.push_str(&format!(
+                "({skipped} file(s) skipped — larger than {})\n",
+                human_size(DUP_HASH_SIZE_CAP)
+            ));
         }
     }
 
     if !stats.errors.is_empty() {
         out.push('\n');
-        out.push_str(&format!("Warnings ({} entries could not be read)\n", stats.errors.len()));
+        out.push_str(&format!(
+            "Warnings ({} entries could not be read)\n",
+            stats.errors.len()
+        ));
         out.push_str(&"-".repeat(70));
         out.push('\n');
         for err in &stats.errors {
@@ -1509,11 +1778,19 @@ fn render_markdown(
 ) -> String {
     let mut out = String::new();
     let root_display = cfg.root.display().to_string();
-    let rel = |p: &Path| -> String { bidi_safe(&p.strip_prefix(&cfg.root).unwrap_or(p).display().to_string()) };
+    let rel = |p: &Path| -> String {
+        bidi_safe(&p.strip_prefix(&cfg.root).unwrap_or(p).display().to_string())
+    };
 
     out.push_str("# 📊 Directory Scan Report\n\n");
-    out.push_str(&format!("**Path:** `{}`  \n", md_escape(&bidi_safe(&root_display))));
-    out.push_str(&format!("**Generated:** {}  \n", format_time(Some(SystemTime::now()))));
+    out.push_str(&format!(
+        "**Path:** `{}`  \n",
+        md_escape(&bidi_safe(&root_display))
+    ));
+    out.push_str(&format!(
+        "**Generated:** {}  \n",
+        format_time(Some(SystemTime::now()))
+    ));
     out.push_str(&format!("**Scan duration:** {elapsed:.1?}\n\n"));
     out.push_str("---\n\n");
 
@@ -1527,25 +1804,42 @@ fn render_markdown(
 
     out.push_str("## 📈 Overview\n\n");
     out.push_str("| Metric | Value |\n|---|---|\n");
-    let total_entries = stats.file_count + stats.dir_count + stats.symlink_count + stats.other_count;
+    let total_entries =
+        stats.file_count + stats.dir_count + stats.symlink_count + stats.other_count;
     out.push_str(&format!("| Total entries | {total_entries} |\n"));
     out.push_str(&format!("| Files | {} |\n", stats.file_count));
     out.push_str(&format!("| Directories | {} |\n", stats.dir_count));
     out.push_str(&format!("| Symlinks | {} |\n", stats.symlink_count));
     if stats.other_count > 0 {
-        out.push_str(&format!("| Other (sockets/etc) | {} |\n", stats.other_count));
+        out.push_str(&format!(
+            "| Other (sockets/etc) | {} |\n",
+            stats.other_count
+        ));
     }
-    out.push_str(&format!("| Total size | {} ({} bytes) |\n", human_size(stats.total_size), stats.total_size));
+    out.push_str(&format!(
+        "| Total size | {} ({} bytes) |\n",
+        human_size(stats.total_size),
+        stats.total_size
+    ));
     out.push_str(&format!("| Hidden entries | {} |\n", stats.hidden_count));
     out.push_str(&format!("| Empty files | {} |\n", stats.empty_file_count));
-    out.push_str(&format!("| Empty directories | {} |\n", stats.empty_dir_count));
+    out.push_str(&format!(
+        "| Empty directories | {} |\n",
+        stats.empty_dir_count
+    ));
     if stats.excluded_count > 0 {
-        out.push_str(&format!("| Excluded entries | {} |\n", stats.excluded_count));
+        out.push_str(&format!(
+            "| Excluded entries | {} |\n",
+            stats.excluded_count
+        ));
     }
     out.push_str(&format!("| Max tree depth | {} |\n", stats.max_depth_seen));
     if stats.file_count > 0 {
         let avg = stats.total_size as f64 / stats.file_count as f64;
-        out.push_str(&format!("| Average file size | {} |\n", human_size(avg.round() as u64)));
+        out.push_str(&format!(
+            "| Average file size | {} |\n",
+            human_size(avg.round() as u64)
+        ));
     }
     out.push('\n');
     out.push_str("---\n\n");
@@ -1561,9 +1855,13 @@ fn render_markdown(
     out.push_str("## 🧩 Breakdown by Extension\n\n");
     out.push_str("| Extension | Count | Total Size |\n|---|---|---|\n");
     let mut ext_vec: Vec<(&String, &(u64, u64))> = stats.by_extension.iter().collect();
-    ext_vec.sort_by(|a, b| b.1 .1.cmp(&a.1 .1));
+    ext_vec.sort_by_key(|e| std::cmp::Reverse(e.1 .1));
     for (ext, (count, size)) in ext_vec.iter().take(15) {
-        out.push_str(&format!("| `{}` | {count} | {} |\n", md_escape(ext), human_size(*size)));
+        out.push_str(&format!(
+            "| `{}` | {count} | {} |\n",
+            md_escape(ext),
+            human_size(*size)
+        ));
     }
     out.push('\n');
     out.push_str("---\n\n");
@@ -1571,9 +1869,14 @@ fn render_markdown(
     out.push_str(&format!("## 🏆 Largest {} Files\n\n", cfg.top_n));
     out.push_str("| # | Size | Path |\n|---|---|---|\n");
     let mut files: Vec<&Entry> = entries.iter().filter(|e| e.kind == Kind::File).collect();
-    files.sort_by(|a, b| b.size.cmp(&a.size));
+    files.sort_by_key(|f| std::cmp::Reverse(f.size));
     for (i, f) in files.iter().take(cfg.top_n).enumerate() {
-        out.push_str(&format!("| {} | {} | `{}` |\n", i + 1, human_size(f.size), md_escape(&rel(&f.path))));
+        out.push_str(&format!(
+            "| {} | {} | `{}` |\n",
+            i + 1,
+            human_size(f.size),
+            md_escape(&rel(&f.path))
+        ));
     }
     out.push('\n');
     out.push_str("---\n\n");
@@ -1582,21 +1885,43 @@ fn render_markdown(
         out.push_str(&format!("## 🗃️ Largest {} Directories\n\n", cfg.top_n));
         out.push_str("| # | Total Size | Items | Path |\n|---|---|---|---|\n");
         for (i, (path, size, count)) in dirs.iter().enumerate() {
-            let rel_path = bidi_safe(&path.strip_prefix(&cfg.root).unwrap_or(path).display().to_string());
-            out.push_str(&format!("| {} | {} | {count} | `{}` |\n", i + 1, human_size(*size), md_escape(&rel_path)));
+            let rel_path = bidi_safe(
+                &path
+                    .strip_prefix(&cfg.root)
+                    .unwrap_or(path)
+                    .display()
+                    .to_string(),
+            );
+            out.push_str(&format!(
+                "| {} | {} | {count} | `{}` |\n",
+                i + 1,
+                human_size(*size),
+                md_escape(&rel_path)
+            ));
         }
         out.push('\n');
         out.push_str("---\n\n");
     }
 
     out.push_str("## 🕒 Timeline\n\n");
-    let mut by_time: Vec<&Entry> = entries.iter().filter(|e| e.kind == Kind::File && e.modified.is_some()).collect();
+    let mut by_time: Vec<&Entry> = entries
+        .iter()
+        .filter(|e| e.kind == Kind::File && e.modified.is_some())
+        .collect();
     by_time.sort_by_key(|e| e.modified);
     if let Some(oldest) = by_time.first() {
-        out.push_str(&format!("- **Oldest file:** `{}` — {}\n", md_escape(&rel(&oldest.path)), format_time(oldest.modified)));
+        out.push_str(&format!(
+            "- **Oldest file:** `{}` — {}\n",
+            md_escape(&rel(&oldest.path)),
+            format_time(oldest.modified)
+        ));
     }
     if let Some(newest) = by_time.last() {
-        out.push_str(&format!("- **Newest file:** `{}` — {}\n", md_escape(&rel(&newest.path)), format_time(newest.modified)));
+        out.push_str(&format!(
+            "- **Newest file:** `{}` — {}\n",
+            md_escape(&rel(&newest.path)),
+            format_time(newest.modified)
+        ));
     }
     out.push('\n');
 
@@ -1606,7 +1931,10 @@ fn render_markdown(
         if groups.is_empty() {
             out.push_str("No duplicate files found. ✅\n\n");
         } else {
-            let total_wasted: u64 = groups.iter().map(|g| g[0].size * (g.len() as u64 - 1)).sum();
+            let total_wasted: u64 = groups
+                .iter()
+                .map(|g| g[0].size * (g.len() as u64 - 1))
+                .sum();
             out.push_str(&format!(
                 "Found **{}** group(s) of duplicate files, wasting approximately **{}** of disk space.\n\n",
                 groups.len(),
@@ -1637,7 +1965,10 @@ fn render_markdown(
 
     if !stats.errors.is_empty() {
         out.push_str("---\n\n");
-        out.push_str(&format!("## ⚠️ Warnings ({} entries)\n\n", stats.errors.len()));
+        out.push_str(&format!(
+            "## ⚠️ Warnings ({} entries)\n\n",
+            stats.errors.len()
+        ));
         for err in &stats.errors {
             out.push_str(&format!("- {}\n", md_escape(err)));
         }
@@ -1671,7 +2002,7 @@ fn collect_dirs(node: &TreeNode, prefix: &Path, out: &mut Vec<(PathBuf, u64, usi
 fn top_dirs(tree: &TreeNode, root: &Path, top_n: usize) -> Vec<(PathBuf, u64, usize)> {
     let mut dirs = Vec::new();
     collect_dirs(tree, root, &mut dirs);
-    dirs.sort_by(|a, b| b.1.cmp(&a.1));
+    dirs.sort_by_key(|d| std::cmp::Reverse(d.1));
     dirs.truncate(top_n);
     dirs
 }
@@ -1714,20 +2045,44 @@ fn render_json(
     let rel = |p: &Path| -> String { p.strip_prefix(&cfg.root).unwrap_or(p).display().to_string() };
     let mut out = String::new();
     out.push_str("{\n");
-    out.push_str(&format!("  \"path\": {},\n", json_str(&cfg.root.display().to_string())));
-    out.push_str(&format!("  \"generated\": {},\n", json_str(&format_time(Some(SystemTime::now())))));
-    out.push_str(&format!("  \"scan_duration_ms\": {},\n", elapsed.as_millis()));
+    out.push_str(&format!(
+        "  \"path\": {},\n",
+        json_str(&cfg.root.display().to_string())
+    ));
+    out.push_str(&format!(
+        "  \"generated\": {},\n",
+        json_str(&format_time(Some(SystemTime::now())))
+    ));
+    out.push_str(&format!(
+        "  \"scan_duration_ms\": {},\n",
+        elapsed.as_millis()
+    ));
 
     out.push_str("  \"summary\": {\n");
     out.push_str(&format!("    \"files\": {},\n", stats.file_count));
     out.push_str(&format!("    \"directories\": {},\n", stats.dir_count));
     out.push_str(&format!("    \"symlinks\": {},\n", stats.symlink_count));
     out.push_str(&format!("    \"other\": {},\n", stats.other_count));
-    out.push_str(&format!("    \"total_size_bytes\": {},\n", stats.total_size));
-    out.push_str(&format!("    \"hidden_entries\": {},\n", stats.hidden_count));
-    out.push_str(&format!("    \"empty_files\": {},\n", stats.empty_file_count));
-    out.push_str(&format!("    \"empty_directories\": {},\n", stats.empty_dir_count));
-    out.push_str(&format!("    \"excluded_entries\": {},\n", stats.excluded_count));
+    out.push_str(&format!(
+        "    \"total_size_bytes\": {},\n",
+        stats.total_size
+    ));
+    out.push_str(&format!(
+        "    \"hidden_entries\": {},\n",
+        stats.hidden_count
+    ));
+    out.push_str(&format!(
+        "    \"empty_files\": {},\n",
+        stats.empty_file_count
+    ));
+    out.push_str(&format!(
+        "    \"empty_directories\": {},\n",
+        stats.empty_dir_count
+    ));
+    out.push_str(&format!(
+        "    \"excluded_entries\": {},\n",
+        stats.excluded_count
+    ));
     out.push_str(&format!("    \"max_depth\": {}\n", stats.max_depth_seen));
     out.push_str("  },\n");
 
@@ -1744,7 +2099,7 @@ fn render_json(
 
     out.push_str("  \"by_extension\": [\n");
     let mut ext_vec: Vec<(&String, &(u64, u64))> = stats.by_extension.iter().collect();
-    ext_vec.sort_by(|a, b| b.1 .1.cmp(&a.1 .1));
+    ext_vec.sort_by_key(|e| std::cmp::Reverse(e.1 .1));
     for (i, (ext, (count, size))) in ext_vec.iter().enumerate() {
         let comma = if i + 1 < ext_vec.len() { "," } else { "" };
         out.push_str(&format!(
@@ -1781,7 +2136,10 @@ fn render_json(
         out.push_str("    \"groups\": [\n");
         for (gi, group) in groups.iter().enumerate() {
             let gcomma = if gi + 1 < groups.len() { "," } else { "" };
-            out.push_str(&format!("      {{ \"size_bytes\": {}, \"files\": [", group[0].size));
+            out.push_str(&format!(
+                "      {{ \"size_bytes\": {}, \"files\": [",
+                group[0].size
+            ));
             for (fi, e) in group.iter().enumerate() {
                 let fcomma = if fi + 1 < group.len() { ", " } else { "" };
                 out.push_str(&format!("{}{}", json_str(&rel(&e.path)), fcomma));
@@ -1813,7 +2171,12 @@ fn render_csv(root: &Path, entries: &[Entry]) -> String {
     let mut out = String::new();
     out.push_str("path,kind,size_bytes,depth,modified,hidden\n");
     for e in entries {
-        let rel = e.path.strip_prefix(root).unwrap_or(&e.path).display().to_string();
+        let rel = e
+            .path
+            .strip_prefix(root)
+            .unwrap_or(&e.path)
+            .display()
+            .to_string();
         let kind = match e.kind {
             Kind::File => "file",
             Kind::Dir => "dir",
@@ -1865,7 +2228,15 @@ fn run() -> Result<(), String> {
     let mut stats = Stats::new();
     let mut progress = Progress::new(cfg.show_progress);
     let root_label = cfg.root.display().to_string();
-    let tree = walk(&cfg.root, root_label, 0, &cfg, &mut entries, &mut stats, &mut progress);
+    let tree = walk(
+        &cfg.root,
+        root_label,
+        0,
+        &cfg,
+        &mut entries,
+        &mut stats,
+        &mut progress,
+    );
     progress.finish();
     let elapsed = start.elapsed();
 
@@ -1886,14 +2257,34 @@ fn run() -> Result<(), String> {
         }
     }
 
-    let dup_result = if cfg.find_duplicates { Some(find_duplicates(&entries)) } else { None };
+    let dup_result = if cfg.find_duplicates {
+        Some(find_duplicates(&entries))
+    } else {
+        None
+    };
 
     let dirs = top_dirs(&tree, &cfg.root, cfg.top_n);
-    let summary = render_summary_report(&cfg.root, &stats, &entries, &dirs, cfg.top_n, elapsed, dup_result.as_ref());
+    let summary = render_summary_report(
+        &cfg.root,
+        &stats,
+        &entries,
+        &dirs,
+        cfg.top_n,
+        elapsed,
+        dup_result.as_ref(),
+    );
     print!("{summary}");
 
     if let Some(md_path) = &cfg.markdown {
-        let markdown = render_markdown(&cfg, &tree, &stats, &entries, &dirs, dup_result.as_ref(), elapsed);
+        let markdown = render_markdown(
+            &cfg,
+            &tree,
+            &stats,
+            &entries,
+            &dirs,
+            dup_result.as_ref(),
+            elapsed,
+        );
         write_text_file(md_path, &markdown, cfg.utf8_bom)?;
         eprintln!("(markdown report written to {})", md_path.display());
     }

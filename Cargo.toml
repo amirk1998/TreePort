@@ -6,6 +6,10 @@ description = "A fast, zero-dependency directory & file intelligence tool for th
 license = "MIT"
 repository = "https://github.com/amirk1998/treeport"
 readme = "README.md"
+# MSRV: `unsafe extern { ... }` blocks (used for the kernel32 FFI in
+# win_console) were stabilized in 1.82.0 (RFC 3484). This is the floor —
+# CI/dev actually pin to a newer exact version via rust-toolchain.toml.
+rust-version = "1.82"
 
 [[bin]]
 name = "treeport"
