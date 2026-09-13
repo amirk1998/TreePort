@@ -71,7 +71,15 @@ fn render_and_write(
     print!("{summary_report}");
 
     if let Some(path) = &config.markdown {
-        let markdown_report = markdown::render(config, &result.tree, &result.stats, &result.entries, &dirs, duplicates, elapsed);
+        let markdown_report = markdown::render(
+            config,
+            &result.tree,
+            &result.stats,
+            &result.entries,
+            &dirs,
+            duplicates,
+            elapsed,
+        );
         output::write_text_file(path, &markdown_report, config.utf8_bom)?;
         eprintln!("(markdown report written to {})", path.display());
     }

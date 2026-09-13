@@ -65,14 +65,53 @@ impl Config {
         let mut i = 0;
         while i < args.len() {
             match args[i].as_str() {
-                "-h" | "--help" => { print!("{USAGE}"); std::process::exit(0); }
-                "-o" | "--output" => output = Some(PathBuf::from(Self::next(args, &mut i, "--output requires a file path")?)),
-                "-m" | "--markdown" => markdown = Some(PathBuf::from(Self::next(args, &mut i, "--markdown requires a file path")?)),
-                "-j" | "--json" => json = Some(PathBuf::from(Self::next(args, &mut i, "--json requires a file path")?)),
-                "-c" | "--csv" => csv = Some(PathBuf::from(Self::next(args, &mut i, "--csv requires a file path")?)),
-                "--file-list" => file_list = Some(PathBuf::from(Self::next(args, &mut i, "--file-list requires a file path")?)),
+                "-h" | "--help" => {
+                    print!("{USAGE}");
+                    std::process::exit(0);
+                }
+                "-o" | "--output" => {
+                    output = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--output requires a file path",
+                    )?))
+                }
+                "-m" | "--markdown" => {
+                    markdown = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--markdown requires a file path",
+                    )?))
+                }
+                "-j" | "--json" => {
+                    json = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--json requires a file path",
+                    )?))
+                }
+                "-c" | "--csv" => {
+                    csv = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--csv requires a file path",
+                    )?))
+                }
+                "--file-list" => {
+                    file_list = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--file-list requires a file path",
+                    )?))
+                }
                 "--find-duplicates" => find_duplicates = true,
-                "--min-size" => min_size = Some(crate::util::parse_size(Self::next(args, &mut i, "--min-size requires a size, e.g. 1MB")?)?),
+                "--min-size" => {
+                    min_size = Some(crate::util::parse_size(Self::next(
+                        args,
+                        &mut i,
+                        "--min-size requires a size, e.g. 1MB",
+                    )?)?)
+                }
                 "-f" | "--full" => show_full_table = true,
                 "-t" | "--top" => {
                     let v = Self::next(args, &mut i, "--top requires a number")?;
@@ -80,18 +119,49 @@ impl Config {
                 }
                 "-d" | "--max-depth" => {
                     let v = Self::next(args, &mut i, "--max-depth requires a number")?;
-                    max_depth = Some(v.parse().map_err(|_| format!("invalid --max-depth value: {v}"))?);
+                    max_depth = Some(
+                        v.parse()
+                            .map_err(|_| format!("invalid --max-depth value: {v}"))?,
+                    );
                 }
-                "-e" | "--exclude" => excludes.push(Self::next(args, &mut i, "--exclude requires a name")?.to_string()),
-                "--exclude-glob" => exclude_glob.push(Self::next(args, &mut i, "--exclude-glob requires a pattern, e.g. '*.log'")?.to_string()),
-                "--include-ext" => include_ext.push(Self::next(args, &mut i, "--include-ext requires an extension, e.g. rs")?.trim_start_matches('.').to_lowercase()),
-                "--exclude-ext" => exclude_ext.push(Self::next(args, &mut i, "--exclude-ext requires an extension, e.g. log")?.trim_start_matches('.').to_lowercase()),
+                "-e" | "--exclude" => excludes
+                    .push(Self::next(args, &mut i, "--exclude requires a name")?.to_string()),
+                "--exclude-glob" => exclude_glob.push(
+                    Self::next(
+                        args,
+                        &mut i,
+                        "--exclude-glob requires a pattern, e.g. '*.log'",
+                    )?
+                    .to_string(),
+                ),
+                "--include-ext" => include_ext.push(
+                    Self::next(args, &mut i, "--include-ext requires an extension, e.g. rs")?
+                        .trim_start_matches('.')
+                        .to_lowercase(),
+                ),
+                "--exclude-ext" => exclude_ext.push(
+                    Self::next(
+                        args,
+                        &mut i,
+                        "--exclude-ext requires an extension, e.g. log",
+                    )?
+                    .trim_start_matches('.')
+                    .to_lowercase(),
+                ),
                 "--newer-than" => {
-                    let v = Self::next(args, &mut i, "--newer-than requires a date, e.g. 2025-01-01")?;
+                    let v = Self::next(
+                        args,
+                        &mut i,
+                        "--newer-than requires a date, e.g. 2025-01-01",
+                    )?;
                     newer_than = Some(crate::util::parse_date(v)?);
                 }
                 "--older-than" => {
-                    let v = Self::next(args, &mut i, "--older-than requires a date, e.g. 2025-01-01")?;
+                    let v = Self::next(
+                        args,
+                        &mut i,
+                        "--older-than requires a date, e.g. 2025-01-01",
+                    )?;
                     older_than = Some(crate::util::parse_date(v)?);
                 }
                 "-s" | "--sort" => {
@@ -99,7 +169,11 @@ impl Config {
                     sort = match v {
                         "name" => SortOrder::Name,
                         "size" => SortOrder::Size,
-                        other => return Err(format!("invalid --sort value: {other} (use 'name' or 'size')")),
+                        other => {
+                            return Err(format!(
+                                "invalid --sort value: {other} (use 'name' or 'size')"
+                            ));
+                        }
                     };
                 }
                 "--ascii" => ascii = true,
@@ -108,9 +182,17 @@ impl Config {
                 "--utf8-bom" => utf8_bom = true,
                 "--no-progress" => show_progress = false,
                 "-q" | "--quiet" => quiet = true,
-                "--ignore-file" => ignore_file = Some(PathBuf::from(Self::next(args, &mut i, "--ignore-file requires a file path")?)),
+                "--ignore-file" => {
+                    ignore_file = Some(PathBuf::from(Self::next(
+                        args,
+                        &mut i,
+                        "--ignore-file requires a file path",
+                    )?))
+                }
                 "--no-ignore-file" => no_ignore_file = true,
-                other if root.is_none() && !other.starts_with('-') => root = Some(PathBuf::from(other)),
+                other if root.is_none() && !other.starts_with('-') => {
+                    root = Some(PathBuf::from(other))
+                }
                 other => return Err(format!("unknown argument: {other}\n\n{USAGE}")),
             }
             i += 1;
@@ -120,7 +202,9 @@ impl Config {
         validate_root(&root)?;
 
         if !no_ignore_file {
-            let path = ignore_file.clone().unwrap_or_else(|| root.join(".treeportignore"));
+            let path = ignore_file
+                .clone()
+                .unwrap_or_else(|| root.join(".treeportignore"));
             match fs::read_to_string(&path) {
                 Ok(contents) => {
                     for line in contents.lines() {
@@ -141,12 +225,38 @@ impl Config {
         platform::initialize_console(color);
         let show_progress = show_progress && io::stderr().is_terminal();
 
-        Ok(Self { root, output, markdown, json, csv, file_list, top_n, max_depth, excludes, exclude_glob, include_ext, exclude_ext, newer_than, older_than, sort, ascii, color, utf8_bom, show_full_table, quiet, find_duplicates, min_size, show_progress })
+        Ok(Self {
+            root,
+            output,
+            markdown,
+            json,
+            csv,
+            file_list,
+            top_n,
+            max_depth,
+            excludes,
+            exclude_glob,
+            include_ext,
+            exclude_ext,
+            newer_than,
+            older_than,
+            sort,
+            ascii,
+            color,
+            utf8_bom,
+            show_full_table,
+            quiet,
+            find_duplicates,
+            min_size,
+            show_progress,
+        })
     }
 
     fn next<'a>(args: &'a [String], i: &mut usize, message: &str) -> Result<&'a str, String> {
         *i += 1;
-        args.get(*i).map(String::as_str).ok_or_else(|| message.to_string())
+        args.get(*i)
+            .map(String::as_str)
+            .ok_or_else(|| message.to_string())
     }
 }
 

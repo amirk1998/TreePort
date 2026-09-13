@@ -1,4 +1,4 @@
-use std::collections::{hash_map::DefaultHasher, HashMap};
+use std::collections::{HashMap, hash_map::DefaultHasher};
 use std::fs::File;
 use std::hash::Hasher;
 use std::io::{self, BufReader, Read};
@@ -24,7 +24,9 @@ pub fn find_duplicates(entries: &[Entry]) -> DuplicateResult {
 
     let mut result = DuplicateResult::default();
     for (size, candidates) in by_size {
-        if candidates.len() < 2 { continue; }
+        if candidates.len() < 2 {
+            continue;
+        }
         if size > DUP_HASH_SIZE_CAP {
             result.skipped_too_large += candidates.len();
             continue;
@@ -36,7 +38,9 @@ pub fn find_duplicates(entries: &[Entry]) -> DuplicateResult {
             }
         }
         for group in by_hash.into_values() {
-            if group.len() > 1 { result.groups.push(group); }
+            if group.len() > 1 {
+                result.groups.push(group);
+            }
         }
     }
 
@@ -49,7 +53,9 @@ pub fn find_duplicates(entries: &[Entry]) -> DuplicateResult {
 }
 
 pub fn wasted_space(group: &[usize], entries: &[Entry]) -> u64 {
-    entries[group[0]].size.saturating_mul(group.len().saturating_sub(1) as u64)
+    entries[group[0]]
+        .size
+        .saturating_mul(group.len().saturating_sub(1) as u64)
 }
 
 fn hash_file(path: &Path) -> Option<u64> {
@@ -59,13 +65,18 @@ fn hash_file(path: &Path) -> Option<u64> {
     let mut buffer = [0u8; 64 * 1024];
     loop {
         let bytes_read = reader.read(&mut buffer).ok()?;
-        if bytes_read == 0 { break; }
+        if bytes_read == 0 {
+            break;
+        }
         hasher.write(&buffer[..bytes_read]);
     }
     Some(hasher.finish())
 }
 
-pub fn relative_paths<'a>(group: &'a [usize], entries: &'a [Entry]) -> impl Iterator<Item = &'a Entry> + 'a {
+pub fn relative_paths<'a>(
+    group: &'a [usize],
+    entries: &'a [Entry],
+) -> impl Iterator<Item = &'a Entry> + 'a {
     group.iter().map(|&index| &entries[index])
 }
 
