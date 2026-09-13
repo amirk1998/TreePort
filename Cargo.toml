@@ -1,19 +1,21 @@
 [package]
 name = "treeport"
-version = "0.1.0"
-edition = "2021"
-description = "A fast, zero-dependency directory & file intelligence tool for the command line — with full Unicode / right-to-left script support (Persian, Arabic, Hebrew, …) built in."
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A fast, zero-dependency directory & file intelligence CLI with full Unicode and right-to-left script support."
 license = "MIT"
 repository = "https://github.com/amirk1998/treeport"
 readme = "README.md"
-# MSRV: `unsafe extern { ... }` blocks (used for the kernel32 FFI in
-# win_console) were stabilized in 1.82.0 (RFC 3484). This is the floor —
-# CI/dev actually pin to a newer exact version via rust-toolchain.toml.
-rust-version = "1.82"
+keywords = ["cli", "filesystem", "directory", "file-analysis", "unicode"]
+categories = ["command-line-utilities", "filesystem"]
 
 [[bin]]
 name = "treeport"
 path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
 
 [profile.release]
 opt-level = 3
