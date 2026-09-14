@@ -168,5 +168,6 @@ jobs:
           name: Treeport ${{ github.event.inputs.tag || github.ref_name }}
           draft: false
           prerelease: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
-          generate_release_notes: true
+          generate_release_notes: false
+          body_path: .github/release-notes/${{ github.event.inputs.tag || github.ref_name }}.md
           files: dist/*
